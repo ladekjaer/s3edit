@@ -1,0 +1,14 @@
+{
+  "name": "s3edit",
+  "description": "Opens a file on Amazon S3 in default text editor.",
+  "version": "0.0.1",
+  "bin": {
+    "s3edit": "./s3edit.js"
+  },
+  "dependencies": {
+    "ini": "~1.1.0",
+    "string-editor": "~0.1.0",
+    "optimist": "~0.6.0",
+    "request": "~2.31.0"
+  }
+}
