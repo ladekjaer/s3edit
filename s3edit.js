@@ -3,19 +3,28 @@
 var fs = require('fs');
 var request = require('request');
 var edit = require('string-editor');
-var argv = require('optimist').argv;
 var ini = require('ini');
+var argv = require('optimist').argv;
 
-var s3auth = {
-    bucket: argv._[0]
-};
-if (!s3auth.bucket) {
-    console.error('Bucket must be specified.');
+var s3auth = {bucket: argv._[0]};
+var file = argv._[1];
+if (!s3auth.bucket || !file) {
+    console.error('Usage: s3edit bucket file [options]');
+    console.error('');
+    console.error('Required:');
+    console.error('\tbucket\t\tthe containing S3 bucket');
+    console.error('\tfile\t\tthe file to open');
+    console.error('');
+    console.error('Options:');
+    console.error('\t--key\t\tS3 access key');
+    console.error('\t--secret\tS3 secret key');
+    console.error('\t--profile\tLoad profile from ~/.aws/config');
+    console.error('');
+    console.error('Unset options will be read from default in ~/.aws/conig');
     process.exit(1);
 }
 
 if (fs.existsSync(process.env.HOME+'/.aws/config')) {
-
     var configFile = fs.readFileSync(process.env.HOME+'/.aws/config', 'utf8');
     var config = ini.parse(configFile);
 
@@ -31,20 +40,12 @@ if (fs.existsSync(process.env.HOME+'/.aws/config')) {
         s3auth.key = config.default.aws_access_key_id;
         s3auth.secret = config.default.aws_secret_access_key;
     }
-} else {
-    s3auth = {
-        key: argv.key,
-        secret: argv.secret,
-    }
 }
 
-var path = argv._[1];
-if (!path) {
-    console.error('Missing path to file on S3.');
-    process.exit(1);
-}
+if (argv.key) s3auth.key = argv.key;
+if (argv.secret) s3auth.secret = argv.secret;
 
-var s3path = 'https://'+s3auth.bucket+'.s3.amazonaws.com/'+path;
+var s3path = 'https://'+s3auth.bucket+'.s3.amazonaws.com/'+file;
 
 var onResponse = function(fn) {
     return function(err, response, body) {
