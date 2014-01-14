@@ -6,6 +6,11 @@ var edit = require('string-editor');
 var ini = require('ini');
 var argv = require('optimist').argv;
 
+if (argv.version) {
+    console.log(require('./package.json').version);
+    process.exit(0);
+}
+
 var s3auth = {bucket: argv._[0]};
 var file = argv._[1];
 if (!s3auth.bucket || !file) {
@@ -20,6 +25,9 @@ if (!s3auth.bucket || !file) {
     console.error('\t--secret\tS3 secret key (defaults to default in ~/.aws/config)');
     console.error('\t--profile\tLoad profile from ~/.aws/config');
     console.error('\t--readonly\tDoes not write file back to the server');
+    console.error('\t--version\tDoes nothing but displays s3edit version');
+    console.error('');
+    console.error('Version: v'+require('./package.json').version);
     process.exit(1);
 }
 
