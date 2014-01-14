@@ -16,11 +16,10 @@ if (!s3auth.bucket || !file) {
     console.error('\tfile\t\tthe file to open');
     console.error('');
     console.error('Options:');
-    console.error('\t--key\t\tS3 access key');
-    console.error('\t--secret\tS3 secret key');
+    console.error('\t--key\t\tS3 access key (defaults to default in ~/.aws/config)');
+    console.error('\t--secret\tS3 secret key (defaults to default in ~/.aws/config)');
     console.error('\t--profile\tLoad profile from ~/.aws/config');
-    console.error('');
-    console.error('Unset options will be read from default in ~/.aws/conig');
+    console.error('\t--readonly\tDoes not write file back to the server');
     process.exit(1);
 }
 
@@ -68,7 +67,7 @@ request.get(s3path, {
             body: text
         };
         if (argv.public) options.headers = {'x-amz-acl':'public-read'};
-        request.put(s3path, options, onResponse());       
+        if (!argv.readonly) request.put(s3path, options, onResponse());       
     });
 }));
 
