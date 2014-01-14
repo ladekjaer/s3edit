@@ -1,7 +1,7 @@
 {
   "name": "s3edit",
   "description": "Opens a file on Amazon S3 in default text editor.",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "bin": {
     "s3edit": "./s3edit.js"
   },
