@@ -1,10 +1,14 @@
 #!/usr/bin/env node
 
+var https = require('https')
 var fs = require('fs');
-var request = require('request');
+var crypto = require('crypto')
+var path = require('path')
+var awssign = require('awssign')
 var edit = require('string-editor');
 var ini = require('ini');
 var argv = require('optimist').argv;
+var strlen = require('utf8-length')
 
 if (argv.version) {
     console.log(require('./package.json').version);
@@ -12,8 +16,10 @@ if (argv.version) {
 }
 
 var s3auth = {bucket: argv._[0]};
-var file = argv._[1];
-if (!s3auth.bucket || !file) {
+var filepath = path.join('/', argv._[1]);
+var filename = path.parse(filepath).base
+
+if (!s3auth.bucket || !filepath) {
     console.error('Usage: s3edit bucket file [options]');
     console.error('');
     console.error('Required:');
@@ -52,31 +58,76 @@ if (fs.existsSync(process.env.HOME+'/.aws/config')) {
 if (argv.key) s3auth.key = argv.key;
 if (argv.secret) s3auth.secret = argv.secret;
 
-var s3path = 'https://'+s3auth.bucket+'.s3.amazonaws.com/'+file;
+awssign.setup(null, null, 'eu-west-1')
 
-var onResponse = function(fn) {
-    return function(err, response, body) {
-        if (err) throw err;
-        if (response.statusCode !== 200) {
-            body = '';
+var getOptions = {
+    hostname: s3auth.bucket +'.s3.amazonaws.com',
+    port: 443,
+    path: filepath,
+    method: 'GET',
+    headers: {}
+}
+
+awssign.signature(getOptions)
+
+var req = https.request(getOptions, function(res) {
+    res.setEncoding('utf8')
+    var body = ''
+    res.on('data', function(chunk) {
+        body += chunk
+    })
+    res.on('end', function() {
+        if (res.statusCode !== 200) {
+            console.error(body)
+            process.exit(res.statusCode)
         }
-        if (fn) fn(body);
+        edit(body, filename, function(err, result) {
+            if (!argv.readonly) putfile(result)
+            else process.exit(0)
+        })
+    })
+
+})
+
+req.on('error', function(err) {
+    throw err
+})
+
+req.end()
+
+function putfile(newtext) {
+    var putOptions = {
+        hostname: s3auth.bucket+'.s3.amazonaws.com',
+        port: 443,
+        path: filepath,
+        method: 'PUT',
+        headers: {
+            'Content-Type': 'text/plain; charset=utf8',
+            'Content-Length': strlen(newtext)
+        }
     }
-};
+    awssign.signature(putOptions, hash(newtext))
+    var req = https.request(putOptions, function(res) {
+        if (res.statusCode === 200) process.exit(0)
+        res.setEncoding('utf8')
+        var body = ''
+        res.on('data', function(chunk) {
+            body += chunk
+        })
+        res.on('end', function() {
+            console.error(body)
+            process.exit(res.statusCode)
+        })
+    })
+    
+    req.on('error', function(err) {
+        throw err
+    })
 
-var filename = s3path.split('/').pop();
+    req.write(newtext)
+    req.end()
+}
 
-request.get(s3path, {
-    aws: s3auth,
-}, onResponse(function(body) {
-    edit(body, filename, function(err, text) {
-        var options = {
-            aws: s3auth,
-            body: text
-        };
-        if (argv.public) options.headers = {'x-amz-acl':'public-read'};
-        if (!argv.readonly) request.put(s3path, options, onResponse());       
-    });
-}));
-
-
+function hash(str) {
+    return crypto.createHash('sha256').update(str, 'utf8').digest('hex')
+}
