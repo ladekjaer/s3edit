@@ -27,8 +27,9 @@ if (!s3auth.bucket || !filepath) {
     console.error('  file\t\tthe file to open');
     console.error('');
     console.error('Options:');
-    console.error('  --key\t\tS3 access key (defaults to default in ~/.aws/config)');
-    console.error('  --secret\tS3 secret key (defaults to default in ~/.aws/config)');
+    console.error('  --key\t\tS3 access key (defaults to default in ~/.aws/credentials)');
+    console.error('  --secret\tS3 secret key (defaults to default in ~/.aws/credentials)');
+    console.error('  --region\tS3 region (defaults to default in ~/.aws/config)')
     console.error('  --profile\tLoad profile from ~/.aws/config');
     console.error('  --readonly\tDoes not write file back to the server');
     console.error('  --version\tDoes nothing but displays s3edit version');
@@ -37,8 +38,8 @@ if (!s3auth.bucket || !filepath) {
     process.exit(1);
 }
 
-if (fs.existsSync(process.env.HOME+'/.aws/config')) {
-    var configFile = fs.readFileSync(process.env.HOME+'/.aws/config', 'utf8');
+if (fs.existsSync(path.join(process.env.HOME, '.aws/credentials'))) {
+    var configFile = fs.readFileSync(path.join(process.env.HOME, '.aws/credentials'), 'utf8');
     var config = ini.parse(configFile);
 
     if (argv.profile) {
@@ -55,10 +56,9 @@ if (fs.existsSync(process.env.HOME+'/.aws/config')) {
     }
 }
 
-if (argv.key) s3auth.key = argv.key;
-if (argv.secret) s3auth.secret = argv.secret;
-
-awssign.setup(null, null, 'eu-west-1')
+if (argv.key) awssign.setup(argv.key, null, null)
+if (argv.secret) awssign.setup(null, argv.secret, null)
+if (argv.region) awssign.setup(null, null, argv.region)
 
 var getOptions = {
     hostname: s3auth.bucket +'.s3.amazonaws.com',
