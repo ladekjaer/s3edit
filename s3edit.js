@@ -64,8 +64,7 @@ var getOptions = {
     hostname: s3auth.bucket +'.s3.amazonaws.com',
     port: 443,
     path: filepath,
-    method: 'GET',
-    headers: {}
+    method: 'GET'
 }
 
 awssign.signature(getOptions)
