@@ -6,7 +6,7 @@ Opens a file on Amazon S3 in default text editor.
 ###Installation
 One-line install
 
-    $ sudo npm instal s3edit -g
+    $ npm install s3edit -g
 
 ###Usage
 Open the file file.txt in the bucket myBucket
