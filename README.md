@@ -14,6 +14,6 @@ Open the file file.txt in the bucket myBucket
     $ s3edit myBucket file.txt --key "my key" --secret "my secret key"
 
 
-###License
+### License
 
 MIT
